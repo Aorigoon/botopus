@@ -6,13 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:archive/archive_io.dart';
-
-import 'package:flutter/foundation.dart';
-
-void _extractArchive(Map<String, String> args) {
-  extractFileToDisk(args['src']!, args['dest']!);
-}
 
 void main() {
   runApp(const BotopusApp());
@@ -75,10 +68,15 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
         setState(() => statusText = "Unpacking File System (This may take a minute)...");
         
-        // Use Isolate to avoid App Not Responding (ANR) by offloading heavy extraction
+        // Use native tar to extract rootfs correctly (handles symlinks and avoids memory issues)
         final archivePath = archiveFile.path;
         final rootfsPath = rootfsDir.path;
-        await compute(_extractArchive, {'src': archivePath, 'dest': rootfsPath});
+        await rootfsDir.create(recursive: true);
+        final result = await Process.run('tar', ['-xzf', archivePath, '-C', rootfsPath]);
+        
+        if (result.exitCode != 0) {
+          throw Exception("Tar failed: ${result.stderr}");
+        }
         
         // Cleanup archive
         await archiveFile.delete();

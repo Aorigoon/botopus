@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -65,7 +66,13 @@ class _TerminalScreenState extends State<TerminalScreen> {
         await archiveFile.writeAsBytes(alpineData.buffer.asUint8List(), flush: true);
 
         setState(() => statusText = "Unpacking File System (This may take a minute)...");
-        await extractFileToDisk(archiveFile.path, rootfsDir.path);
+        
+        // Use Isolate to avoid App Not Responding (ANR) by offloading heavy extraction
+        final archivePath = archiveFile.path;
+        final rootfsPath = rootfsDir.path;
+        await Isolate.run(() {
+          extractFileToDisk(archivePath, rootfsPath);
+        });
         
         // Cleanup archive
         await archiveFile.delete();

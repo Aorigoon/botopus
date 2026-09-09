@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:xterm/xterm.dart';
+import 'package:pty/pty.dart';
 
 void main() {
   runApp(const BotopusApp());
@@ -11,68 +13,83 @@ class BotopusApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Botopus',
-      theme: ThemeData.dark(useMaterial3: true),
-      home: const BotopusHome(),
+      title: 'Botopus Terminal',
+      theme: ThemeData.dark(useMaterial3: true).copyWith(
+        scaffoldBackgroundColor: Colors.black,
+      ),
+      home: const TerminalScreen(),
     );
   }
 }
 
-class BotopusHome extends StatefulWidget {
-  const BotopusHome({super.key});
+class TerminalScreen extends StatefulWidget {
+  const TerminalScreen({super.key});
 
   @override
-  State<BotopusHome> createState() => _BotopusHomeState();
+  State<TerminalScreen> createState() => _TerminalScreenState();
 }
 
-class _BotopusHomeState extends State<BotopusHome> {
-  static const platform = MethodChannel('com.botopus/proot');
-  String _statusText = 'Terminal Backend Idle';
+class _TerminalScreenState extends State<TerminalScreen> {
+  final terminal = Terminal();
+  late final Pty pty;
 
-  Future<void> _startEngine() async {
-    String status;
-    try {
-      final String result = await platform.invokeMethod('startPRootService', {
-        'command': 'npm install -g @google/claude-code && claude-code --auto-automate'
-      });
-      status = result;
-    } on PlatformException catch (e) {
-      status = "Failed to start engine: '${e.message}'.";
-    }
+  @override
+  void initState() {
+    super.initState();
+    _startPty();
+  }
 
-    setState(() {
-      _statusText = status;
+  void _startPty() {
+    // Determine the shell. On Android, it's typically /system/bin/sh.
+    final shell = Platform.isWindows ? 'cmd.exe' : (Platform.isAndroid ? '/system/bin/sh' : 'sh');
+
+    pty = Pty.start(
+      shell,
+      arguments: [],
+      environment: {'TERM': 'xterm-256color'},
+      workingDirectory: Platform.isAndroid ? '/data/data/com.example.botopus/files' : '.',
+    );
+
+    // Pipe pty output to xterm terminal
+    pty.output.cast<List<int>>().listen((data) {
+      terminal.write(String.fromCharCodes(data));
     });
+
+    // Pipe xterm input to pty
+    terminal.onOutput = (data) {
+      pty.write(data.codeUnits);
+    };
+    
+    terminal.write('Welcome to Botopus Core (Android Shell)\r\n');
+    terminal.write('To test Linux environment, try running commands like "ls" or "pwd".\r\n');
+    terminal.write('PRoot integration for Alpine/Debian can be bootstrapped from this shell.\r\n\r\n');
+  }
+
+  @override
+  void dispose() {
+    pty.kill();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Botopus AI Terminal'),
+        title: const Text('Botopus Terminal'),
+        backgroundColor: Colors.black87,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              pty.kill();
+              terminal.eraseDisplay();
+              _startPty();
+            },
+          ),
+        ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.terminal, size: 80, color: Colors.blueAccent),
-            const SizedBox(height: 20),
-            Text(
-              _statusText,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: _startEngine,
-              icon: const Icon(Icons.rocket_launch),
-              label: const Text('Start UserLAnd PRoot Engine'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
-        ),
+      body: SafeArea(
+        child: TerminalView(terminal),
       ),
     );
   }

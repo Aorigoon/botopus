@@ -172,7 +172,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
                         _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
                         _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
                         _extraKey('COPY', () async {
-                          final text = terminal.text;
+                          final text = terminal.buffer.getText();
                           await Clipboard.setData(ClipboardData(text: text));
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

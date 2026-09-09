@@ -78,6 +78,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
           throw Exception("Tar failed: ${result.stderr}");
         }
         
+        // Fix DNS resolution for Alpine
+        final resolvConf = File('$rootfsPath/etc/resolv.conf');
+        await resolvConf.writeAsString('nameserver 8.8.8.8\nnameserver 1.1.1.1\n');
+        
         // Cleanup archive
         await archiveFile.delete();
       }

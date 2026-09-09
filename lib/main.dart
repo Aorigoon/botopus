@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:xterm/xterm.dart';
@@ -106,7 +107,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     });
 
     terminal.onOutput = (data) {
-      pty!.write(data.codeUnits);
+      pty!.write(Uint8List.fromList(data.codeUnits));
     };
 
     terminal.write('Botopus Linux (Alpine PRoot) Initialized!\r\n');

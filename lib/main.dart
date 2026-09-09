@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:path_provider/path_provider.dart';
@@ -58,6 +58,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
         // Copy proot binary
         final prootData = await rootBundle.load('assets/proot');
         await prootFile.writeAsBytes(prootData.buffer.asUint8List(), flush: true);
+        
+        // Make proot executable
         await Process.run('chmod', ['+x', prootFile.path]);
 
         // Extract rootfs
@@ -158,8 +160,52 @@ class _TerminalScreenState extends State<TerminalScreen> {
                   ],
                 ),
               )
-            : TerminalView(terminal),
+            : Column(
+                children: [
+                  Expanded(child: TerminalView(terminal)),
+                  Container(
+                    color: Colors.grey[900],
+                    height: 45,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
+                        _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
+                        _extraKey('COPY', () async {
+                          final text = terminal.text;
+                          await Clipboard.setData(ClipboardData(text: text));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Terminal text copied!')),
+                            );
+                          }
+                        }),
+                        _extraKey('PASTE', () async {
+                          final data = await Clipboard.getData('text/plain');
+                          if (data?.text != null && pty != null) {
+                            pty!.write(Uint8List.fromList(data!.text!.codeUnits));
+                          }
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
+
+  Widget _extraKey(String label, VoidCallback onPressed) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.black54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        minimumSize: const Size(60, 35),
+      ),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
+  }
 }
+

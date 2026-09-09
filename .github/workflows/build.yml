@@ -14,6 +14,7 @@ jobs:
     - name: Build Flutter APK
       run: |
         flutter create .
+        sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
         sed -i 's/targetSdkVersion = flutter.targetSdkVersion/targetSdkVersion = 28/' android/app/build.gradle.kts
         sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 28\n        lint {\n            abortOnError = false\n        }/' android/app/build.gradle.kts
         flutter build apk --release

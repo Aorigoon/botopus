@@ -108,7 +108,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
       environment: {
         'TERM': 'xterm-256color',
         'PATH': '/bin:/usr/bin:/sbin:/usr/sbin',
-        'HOME': '/root'
+        'HOME': '/root',
+        'PROOT_TMP_DIR': rootfsPath,
+        'PROOT_NO_SECCOMP': '1',
       },
       workingDirectory: rootfsPath,
     );

@@ -190,8 +190,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
                         }),
                         _extraKey('PASTE', () async {
                           final data = await Clipboard.getData('text/plain');
-                          if (data?.text != null && pty != null) {
-                            pty!.write(Uint8List.fromList(data!.text!.codeUnits));
+                          if (data?.text != null) {
+                            // Use terminal.paste which handles newlines/bracketed paste mode correctly
+                            terminal.paste(data!.text!);
                           }
                         }),
                       ],

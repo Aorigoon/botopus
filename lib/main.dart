@@ -35,6 +35,7 @@ class TerminalScreen extends StatefulWidget {
 
 class _TerminalScreenState extends State<TerminalScreen> {
   final terminal = Terminal();
+  final terminalController = TerminalController();
   Pty? pty;
   bool isBootstrapping = true;
   String statusText = "Initializing UserLAnd Environment...";
@@ -215,7 +216,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
               )
             : Column(
                 children: [
-                  Expanded(child: TerminalView(terminal)),
+                  Expanded(child: TerminalView(terminal, controller: terminalController)),
                   Container(
                     color: Colors.grey[900],
                     height: 45,
@@ -227,11 +228,12 @@ class _TerminalScreenState extends State<TerminalScreen> {
                           _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
                           _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
                           _extraKey('COPY', () async {
-                            final text = terminal.buffer.getText();
+                            final selection = terminalController.selection;
+                            final text = selection != null ? terminal.buffer.getText(selection) : terminal.buffer.getText();
                             await Clipboard.setData(ClipboardData(text: text));
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Terminal text copied!')),
+                                SnackBar(content: Text(selection != null ? 'Selected text copied!' : 'Terminal text copied!')),
                               );
                             }
                           }),

@@ -48,7 +48,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   Future<void> _bootstrapEnvironment() async {
     try {
       final docDir = await getApplicationDocumentsDirectory();
-      final rootfsDir = Directory('${docDir.path}/alpine');
+      final rootfsDir = Directory('${docDir.path}/ubuntu');
       final prootFile = File('${docDir.path}/proot');
 
       if (!await rootfsDir.exists() || !await prootFile.exists()) {
@@ -90,10 +90,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
           print("Failed to copy loaders: $e");
         }
 
-        // Extract rootfs
-        final alpineData = await rootBundle.load('assets/alpine-rootfs.tar.gz');
-        final archiveFile = File('${docDir.path}/alpine-rootfs.tar.gz');
-        await archiveFile.writeAsBytes(alpineData.buffer.asUint8List(), flush: true);
+        setState(() => statusText = 'Extracting Ubuntu rootfs...');
+        final ubuntuData = await rootBundle.load('assets/ubuntu-rootfs.tar.gz');
+        final archiveFile = File('${docDir.path}/ubuntu-rootfs.tar.gz');
+        await archiveFile.writeAsBytes(ubuntuData.buffer.asUint8List(), flush: true);
 
         setState(() => statusText = "Unpacking File System (This may take a minute)...");
         
@@ -159,8 +159,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
       pty!.write(Uint8List.fromList(data.codeUnits));
     };
 
-    terminal.write('Botopus Linux (Alpine PRoot) Initialized!\r\n');
-    terminal.write('Try running: apk add python3 nodejs\r\n\r\n');
+    terminal.write('\x1B[1;32mBotopus Linux (Ubuntu PRoot) Initialized!\x1B[0m\r\n');
+    terminal.write('Try running: \x1B[1;36mapt update && apt install python3\x1B[0m\r\n\r\n');
   }
 
   @override
@@ -183,7 +183,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
                 pty?.kill();
                 terminal.eraseDisplay();
                 final docDir = await getApplicationDocumentsDirectory();
-                _startPty('${docDir.path}/proot', '${docDir.path}/alpine');
+                _startPty('${docDir.path}/proot', '${docDir.path}/ubuntu');
               },
             ),
         ],

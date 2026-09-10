@@ -106,8 +106,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
           prootFile.path, 
           ['--link2symlink', '-0', 'tar', '-xzf', archivePath, '-C', rootfsPath],
           environment: {
-            'PROOT_LOADER': loaderFile.path,
-            'PROOT_LOADER_32': loader32File.path,
+            'PROOT_LOADER': '${docDir.path}/loader',
+            'PROOT_LOADER_32': '${docDir.path}/loader32',
           },
         );
         
@@ -258,6 +258,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   Widget _extraKey(String label, VoidCallback onPressed) {
     return TextButton(
       onPressed: onPressed,
+      focusNode: FocusNode(canRequestFocus: false),
       style: TextButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: Colors.black54,

@@ -146,7 +146,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
         '-b', '/proc',
         '-b', '/sys',
         '-w', '/root',
-        '/bin/sh'
+        '/bin/bash'
       ],
       environment: {
         'TERM': 'xterm-256color',

@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:path_provider/path_provider.dart';
@@ -192,6 +193,29 @@ class _TerminalScreenState extends State<TerminalScreen> {
         title: const Text('Botopus Linux'),
         backgroundColor: Colors.black87,
         actions: [
+          if (!isBootstrapping)
+            IconButton(
+              icon: const Icon(Icons.open_in_browser),
+              onPressed: () async {
+                final text = terminal.buffer.getText();
+                final matches = RegExp(r'https?://[^\s]+').allMatches(text);
+                if (matches.isNotEmpty) {
+                  final urlStr = matches.last.group(0)!;
+                  final uri = Uri.parse(urlStr);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open link')));
+                    }
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No link found on screen')));
+                  }
+                }
+              },
+            ),
           if (!isBootstrapping)
             IconButton(
               icon: const Icon(Icons.copy),

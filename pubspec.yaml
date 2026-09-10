@@ -5,6 +5,7 @@ version: 1.0.0+1
 environment:
   sdk: '>=3.0.0 <4.0.0'
 dependencies:
+  url_launcher: ^6.2.1
   flutter:
     sdk: flutter
   xterm: ^4.0.0

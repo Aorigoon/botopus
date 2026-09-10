@@ -153,6 +153,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
         'PATH': '/bin:/usr/bin:/sbin:/usr/sbin',
         'HOME': '/root',
         'PROOT_TMP_DIR': rootfsPath,
+        'TMPDIR': '/tmp',
         'PROOT_NO_SECCOMP': '1',
         'PROOT_LOADER': '$docDirPath/loader',
         'PROOT_LOADER_32': '$docDirPath/loader32',

@@ -61,6 +61,20 @@ class _TerminalScreenState extends State<TerminalScreen> {
         // Make proot executable
         await Process.run('chmod', ['+x', prootFile.path]);
 
+        // Copy shared libraries needed by proot
+        try {
+          final tallocData = await rootBundle.load('assets/libtalloc.so.2');
+          await File('${docDir.path}/libtalloc.so.2').writeAsBytes(tallocData.buffer.asUint8List(), flush: true);
+        } catch (e) {
+          print("Failed to copy libtalloc: $e");
+        }
+        try {
+          final shmemData = await rootBundle.load('assets/libandroid-shmem.so');
+          await File('${docDir.path}/libandroid-shmem.so').writeAsBytes(shmemData.buffer.asUint8List(), flush: true);
+        } catch (e) {
+          print("Failed to copy libandroid-shmem: $e");
+        }
+
         // Extract rootfs
         final alpineData = await rootBundle.load('assets/alpine-rootfs.tar.gz');
         final archiveFile = File('${docDir.path}/alpine-rootfs.tar.gz');

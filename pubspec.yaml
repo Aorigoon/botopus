@@ -17,3 +17,5 @@ flutter:
   assets:
     - assets/proot
     - assets/alpine-rootfs.tar.gz
+    - assets/libtalloc.so.2
+    - assets/libandroid-shmem.so

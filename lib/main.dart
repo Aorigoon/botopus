@@ -192,6 +192,20 @@ class _TerminalScreenState extends State<TerminalScreen> {
         actions: [
           if (!isBootstrapping)
             IconButton(
+              icon: const Icon(Icons.copy),
+              onPressed: () async {
+                final selection = terminalController.selection;
+                final text = selection != null ? terminal.buffer.getText(selection) : terminal.buffer.getText();
+                await Clipboard.setData(ClipboardData(text: text));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(selection != null ? 'Selected text copied!' : 'Terminal text copied!')),
+                  );
+                }
+              },
+            ),
+          if (!isBootstrapping)
+            IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () async {
                 pty?.kill();

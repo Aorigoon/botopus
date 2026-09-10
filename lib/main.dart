@@ -206,31 +206,38 @@ class _TerminalScreenState extends State<TerminalScreen> {
                   Container(
                     color: Colors.grey[900],
                     height: 45,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
-                        _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
-                        _extraKey('COPY', () async {
-                          final text = terminal.buffer.getText();
-                          await Clipboard.setData(ClipboardData(text: text));
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Terminal text copied!')),
-                            );
-                          }
-                        }),
-                        _extraKey('PASTE', () async {
-                          final data = await Clipboard.getData('text/plain');
-                          if (data?.text != null) {
-                            // Remove newlines and extra spaces caused by chat wrapping
-                            String cleanText = data!.text!.replaceAll('\r\n', '').replaceAll('\n', '');
-                            // Also remove accidental spaces that get inserted when copying wrapped URLs
-                            cleanText = cleanText.replaceAll(RegExp(r'\s+google/cli'), 'google/cli');
-                            terminal.paste(cleanText);
-                          }
-                        }),
-                      ],
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
+                          _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
+                          _extraKey('COPY', () async {
+                            final text = terminal.buffer.getText();
+                            await Clipboard.setData(ClipboardData(text: text));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Terminal text copied!')),
+                              );
+                            }
+                          }),
+                          _extraKey('PASTE', () async {
+                            final data = await Clipboard.getData('text/plain');
+                            if (data?.text != null) {
+                              // Remove newlines and extra spaces caused by chat wrapping
+                              String cleanText = data!.text!.replaceAll('\r\n', '').replaceAll('\n', '');
+                              // Also remove accidental spaces that get inserted when copying wrapped URLs
+                              cleanText = cleanText.replaceAll(RegExp(r'\s+google/cli'), 'google/cli');
+                              terminal.paste(cleanText);
+                            }
+                          }),
+                          _extraKey('↑', () => pty?.write(Uint8List.fromList([27, 91, 65]))),
+                          _extraKey('↓', () => pty?.write(Uint8List.fromList([27, 91, 66]))),
+                          _extraKey('←', () => pty?.write(Uint8List.fromList([27, 91, 68]))),
+                          _extraKey('→', () => pty?.write(Uint8List.fromList([27, 91, 67]))),
+                        ],
+                      ),
                     ),
                   ),
                 ],

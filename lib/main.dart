@@ -97,11 +97,19 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
         setState(() => statusText = "Unpacking File System (This may take a minute)...");
         
-        // Use native tar to extract rootfs correctly (handles symlinks and avoids memory issues)
+        // Use PRoot to extract rootfs so that hardlinks are automatically converted to symlinks 
+        // (Android SELinux blocks hardlinks inside app data directories)
         final archivePath = archiveFile.path;
         final rootfsPath = rootfsDir.path;
         await rootfsDir.create(recursive: true);
-        final result = await Process.run('tar', ['-xzf', archivePath, '-C', rootfsPath]);
+        final result = await Process.run(
+          prootFile.path, 
+          ['--link2symlink', '-0', 'tar', '-xzf', archivePath, '-C', rootfsPath],
+          environment: {
+            'PROOT_LOADER': loaderFile.path,
+            'PROOT_LOADER_32': loader32File.path,
+          },
+        );
         
         if (result.exitCode != 0) {
           throw Exception("Tar failed: ${result.stderr}");
@@ -131,6 +139,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     pty = Pty.start(
       prootPath,
       arguments: [
+        '--link2symlink',
         '-0', // fake root
         '-r', rootfsPath, // rootfs path
         '-b', '/dev',

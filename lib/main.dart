@@ -226,7 +226,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
+                          _extraKey('TAB', () => pty?.write(Uint8List.fromList([9]))),
                           _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
+                          _extraKey('-', () => pty?.write(Uint8List.fromList([45]))),
+                          _extraKey('/', () => pty?.write(Uint8List.fromList([47]))),
+                          _extraKey('|', () => pty?.write(Uint8List.fromList([124]))),
                           _extraKey('COPY', () async {
                             final selection = terminalController.selection;
                             final text = selection != null ? terminal.buffer.getText(selection) : terminal.buffer.getText();

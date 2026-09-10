@@ -156,6 +156,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
         'TERM': 'xterm-256color',
         'PATH': '/bin:/usr/bin:/sbin:/usr/sbin',
         'HOME': '/root',
+        'LANG': 'en_US.UTF-8',
         'PROOT_TMP_DIR': rootfsPath,
         'TMPDIR': '/tmp',
         'PROOT_NO_SECCOMP': '1',
@@ -232,12 +233,12 @@ class _TerminalScreenState extends State<TerminalScreen> {
                 children: [
                   Expanded(child: TerminalView(terminal, controller: terminalController)),
                   Container(
-                    color: Colors.grey[900],
-                    height: 45,
+                    color: const Color(0xFF2E3440),
+                    height: 40,
+                    width: double.infinity,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
                           _extraKey('TAB', () => pty?.write(Uint8List.fromList([9]))),
@@ -245,30 +246,18 @@ class _TerminalScreenState extends State<TerminalScreen> {
                           _extraKey('-', () => pty?.write(Uint8List.fromList([45]))),
                           _extraKey('/', () => pty?.write(Uint8List.fromList([47]))),
                           _extraKey('|', () => pty?.write(Uint8List.fromList([124]))),
-                          _extraKey('COPY', () async {
-                            final selection = terminalController.selection;
-                            final text = selection != null ? terminal.buffer.getText(selection) : terminal.buffer.getText();
-                            await Clipboard.setData(ClipboardData(text: text));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(selection != null ? 'Selected text copied!' : 'Terminal text copied!')),
-                              );
-                            }
-                          }),
-                          _extraKey('PASTE', () async {
-                            final data = await Clipboard.getData('text/plain');
-                            if (data?.text != null) {
-                              // Remove newlines and extra spaces caused by chat wrapping
-                              String cleanText = data!.text!.replaceAll('\r\n', '').replaceAll('\n', '');
-                              // Also remove accidental spaces that get inserted when copying wrapped URLs
-                              cleanText = cleanText.replaceAll(RegExp(r'\s+google/cli'), 'google/cli');
-                              terminal.paste(cleanText);
-                            }
-                          }),
+                          _extraKey('PG UP', () => pty?.write(Uint8List.fromList([27, 91, 53, 126]))),
+                          _extraKey('PG DN', () => pty?.write(Uint8List.fromList([27, 91, 54, 126]))),
                           _extraKey('↑', () => pty?.write(Uint8List.fromList([27, 91, 65]))),
                           _extraKey('↓', () => pty?.write(Uint8List.fromList([27, 91, 66]))),
                           _extraKey('←', () => pty?.write(Uint8List.fromList([27, 91, 68]))),
                           _extraKey('→', () => pty?.write(Uint8List.fromList([27, 91, 67]))),
+                          _extraKey('PASTE', () async {
+                            final data = await Clipboard.getData('text/plain');
+                            if (data?.text != null) {
+                              terminal.paste(data!.text!);
+                            }
+                          }),
                         ],
                       ),
                     ),
@@ -280,16 +269,23 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   Widget _extraKey(String label, VoidCallback onPressed) {
-    return TextButton(
-      onPressed: onPressed,
-      focusNode: FocusNode(canRequestFocus: false),
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.black54,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        minimumSize: const Size(60, 35),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          focusNode: FocusNode(canRequestFocus: false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }

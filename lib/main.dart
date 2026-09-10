@@ -74,6 +74,21 @@ class _TerminalScreenState extends State<TerminalScreen> {
         } catch (e) {
           print("Failed to copy libandroid-shmem: $e");
         }
+        
+        // Copy loaders needed by PRoot for Android
+        try {
+          final loaderData = await rootBundle.load('assets/loader');
+          final loaderFile = File('${docDir.path}/loader');
+          await loaderFile.writeAsBytes(loaderData.buffer.asUint8List(), flush: true);
+          await Process.run('chmod', ['+x', loaderFile.path]);
+          
+          final loader32Data = await rootBundle.load('assets/loader32');
+          final loader32File = File('${docDir.path}/loader32');
+          await loader32File.writeAsBytes(loader32Data.buffer.asUint8List(), flush: true);
+          await Process.run('chmod', ['+x', loader32File.path]);
+        } catch (e) {
+          print("Failed to copy loaders: $e");
+        }
 
         // Extract rootfs
         final alpineData = await rootBundle.load('assets/alpine-rootfs.tar.gz');
@@ -112,6 +127,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   void _startPty(String prootPath, String rootfsPath) {
+    final docDirPath = File(prootPath).parent.path;
     pty = Pty.start(
       prootPath,
       arguments: [
@@ -129,6 +145,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
         'HOME': '/root',
         'PROOT_TMP_DIR': rootfsPath,
         'PROOT_NO_SECCOMP': '1',
+        'PROOT_LOADER': '$docDirPath/loader',
+        'PROOT_LOADER_32': '$docDirPath/loader32',
       },
       workingDirectory: rootfsPath,
     );

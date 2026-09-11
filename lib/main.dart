@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -168,12 +169,12 @@ class _TerminalScreenState extends State<TerminalScreen> {
       workingDirectory: rootfsPath,
     );
 
-    pty!.output.cast<List<int>>().listen((data) {
-      terminal.write(String.fromCharCodes(data));
+    pty!.output.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true)).listen((text) {
+      terminal.write(text);
     });
 
-    terminal.onOutput = (data) {
-      pty!.write(Uint8List.fromList(data.codeUnits));
+    terminal.onOutput = (text) {
+      pty!.write(Uint8List.fromList(utf8.encode(text)));
     };
 
     terminal.write('\x1B[1;32mBotopus Linux (Ubuntu PRoot) Initialized!\x1B[0m\r\n');
@@ -198,9 +199,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
               icon: const Icon(Icons.open_in_browser),
               onPressed: () async {
                 final text = terminal.buffer.getText();
-                final matches = RegExp(r'https?://[^\s]+').allMatches(text);
+                final regex = RegExp(r"https?://[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+(?:[\r\n]+[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+)*");
+                final matches = regex.allMatches(text);
                 if (matches.isNotEmpty) {
-                  final urlStr = matches.last.group(0)!;
+                  String urlStr = matches.last.group(0)!.replaceAll(RegExp(r'\r?\n'), '');
                   final uri = Uri.parse(urlStr);
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);

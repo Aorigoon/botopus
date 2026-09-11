@@ -20,96 +20,135 @@ class BotopusApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Botopus Terminal',
-      theme: ThemeData.dark(useMaterial3: true).copyWith(
-        scaffoldBackgroundColor: Colors.black,
+      title: 'Botopus Linux',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF121212), // Deep gray Manus theme
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          elevation: 0,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF4F46E5), // Indigo accent
+        ),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF4F46E5),
+          surface: Color(0xFF1E1E1E),
+        ),
       ),
-      home: const TerminalScreen(),
+      home: const BotopusHomePage(),
     );
   }
 }
 
-class TerminalScreen extends StatefulWidget {
-  const TerminalScreen({super.key});
+class BotopusHomePage extends StatefulWidget {
+  const BotopusHomePage({super.key});
 
   @override
-  State<TerminalScreen> createState() => _TerminalScreenState();
+  State<BotopusHomePage> createState() => _BotopusHomePageState();
 }
 
-class _TerminalScreenState extends State<TerminalScreen> {
-  final terminal = Terminal();
+class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProviderStateMixin {
+  final terminal = Terminal(
+    maxLines: 10000,
+    theme: const TerminalTheme(
+      cursor: Colors.white,
+      selection: Color(0x77FFFFFF),
+      foreground: Colors.white,
+      background: Color(0xFF121212),
+      black: Colors.black,
+      red: Colors.red,
+      green: Colors.green,
+      yellow: Colors.yellow,
+      blue: Colors.blue,
+      magenta: Colors.magenta,
+      cyan: Colors.cyan,
+      white: Colors.white,
+      brightBlack: Colors.black45,
+      brightRed: Colors.redAccent,
+      brightGreen: Colors.greenAccent,
+      brightYellow: Colors.yellowAccent,
+      brightBlue: Colors.blueAccent,
+      brightMagenta: Colors.magentaAccent,
+      brightCyan: Colors.cyanAccent,
+      brightWhite: Colors.white,
+      searchHitBackground: Colors.yellow,
+      searchHitBackgroundCurrent: Colors.orange,
+      searchHitForeground: Colors.black,
+    ),
+  );
+  
   final terminalController = TerminalController();
   Pty? pty;
   bool isBootstrapping = true;
-  String statusText = "Initializing UserLAnd Environment...";
+  String statusText = "Initializing Botopus Linux...";
+  late TabController _tabController;
+  
+  // Chat state
+  List<Map<String, String>> chatSessions = [];
+  String apiKey = "";
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
     WakelockPlus.enable();
     _bootstrapEnvironment();
   }
 
+  // --- PRoot Bootstrap Logic (Preserved) ---
   Future<void> _bootstrapEnvironment() async {
     try {
       final docDir = await getApplicationDocumentsDirectory();
-      final rootfsDir = Directory('${docDir.path}/ubuntu');
       final prootFile = File('${docDir.path}/proot');
+      final loaderFile = File('${docDir.path}/loader');
+      final loader32File = File('${docDir.path}/loader32');
+      final rootfsDir = Directory('${docDir.path}/ubuntu');
 
-      if (!await rootfsDir.exists() || !await prootFile.exists()) {
-        setState(() => statusText = "Extracting PRoot Engine & Alpine Linux...");
-        
-        // Copy proot binary
-        final prootData = await rootBundle.load('assets/proot');
-        await prootFile.writeAsBytes(prootData.buffer.asUint8List(), flush: true);
-        
-        // Make proot executable
+      setState(() => statusText = "Copying binaries...");
+      
+      if (!await prootFile.exists()) {
+        final byteData = await rootBundle.load('assets/proot');
+        await prootFile.writeAsBytes(byteData.buffer.asUint8List());
         await Process.run('chmod', ['+x', prootFile.path]);
+      }
+      if (!await loaderFile.exists()) {
+        final byteData = await rootBundle.load('assets/loader');
+        await loaderFile.writeAsBytes(byteData.buffer.asUint8List());
+        await Process.run('chmod', ['+x', loaderFile.path]);
+      }
+      if (!await loader32File.exists()) {
+        final byteData = await rootBundle.load('assets/loader32');
+        await loader32File.writeAsBytes(byteData.buffer.asUint8List());
+        await Process.run('chmod', ['+x', loader32File.path]);
+      }
 
-        // Copy shared libraries needed by proot
-        try {
-          final tallocData = await rootBundle.load('assets/libtalloc.so.2');
-          await File('${docDir.path}/libtalloc.so.2').writeAsBytes(tallocData.buffer.asUint8List(), flush: true);
-        } catch (e) {
-          print("Failed to copy libtalloc: $e");
-        }
-        try {
-          final shmemData = await rootBundle.load('assets/libandroid-shmem.so');
-          await File('${docDir.path}/libandroid-shmem.so').writeAsBytes(shmemData.buffer.asUint8List(), flush: true);
-        } catch (e) {
-          print("Failed to copy libandroid-shmem: $e");
-        }
-        
-        // Copy loaders needed by PRoot for Android
-        try {
-          final loaderData = await rootBundle.load('assets/loader');
-          final loaderFile = File('${docDir.path}/loader');
-          await loaderFile.writeAsBytes(loaderData.buffer.asUint8List(), flush: true);
-          await Process.run('chmod', ['+x', loaderFile.path]);
-          
-          final loader32Data = await rootBundle.load('assets/loader32');
-          final loader32File = File('${docDir.path}/loader32');
-          await loader32File.writeAsBytes(loader32Data.buffer.asUint8List(), flush: true);
-          await Process.run('chmod', ['+x', loader32File.path]);
-        } catch (e) {
-          print("Failed to copy loaders: $e");
-        }
+      final soFile = File('${docDir.path}/libandroid-shmem.so');
+      if (!await soFile.exists()) {
+        final byteData = await rootBundle.load('assets/libandroid-shmem.so');
+        await soFile.writeAsBytes(byteData.buffer.asUint8List());
+      }
 
-        setState(() => statusText = 'Extracting Ubuntu rootfs...');
-        final ubuntuData = await rootBundle.load('assets/ubuntu-rootfs.tar.gz');
+      if (!await rootfsDir.exists()) {
+        setState(() => statusText = "Extracting RootFS (This will take a while)...");
+        final archiveData = await rootBundle.load('assets/ubuntu-rootfs.tar.gz');
         final archiveFile = File('${docDir.path}/ubuntu-rootfs.tar.gz');
-        await archiveFile.writeAsBytes(ubuntuData.buffer.asUint8List(), flush: true);
-
-        setState(() => statusText = "Unpacking File System (This may take a minute)...");
+        await archiveFile.writeAsBytes(archiveData.buffer.asUint8List());
         
-        // Use PRoot to extract rootfs so that hardlinks are automatically converted to symlinks 
-        // (Android SELinux blocks hardlinks inside app data directories)
-        final archivePath = archiveFile.path;
+        await rootfsDir.create();
         final rootfsPath = rootfsDir.path;
-        await rootfsDir.create(recursive: true);
+        
         final result = await Process.run(
-          prootFile.path, 
-          ['--link2symlink', '-0', 'tar', '-xzf', archivePath, '-C', rootfsPath],
+          prootFile.path,
+          [
+            '--link2symlink',
+            '-0',
+            '-r', rootfsPath,
+            '-b', '/dev', '-b', '/proc', '-b', '/sys',
+            '/bin/tar', '-xf', archiveFile.path, '-C', rootfsPath
+          ],
           environment: {
             'PROOT_LOADER': '${docDir.path}/loader',
             'PROOT_LOADER_32': '${docDir.path}/loader32',
@@ -120,14 +159,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
           throw Exception("Tar failed: ${result.stderr}");
         }
         
-        // Fix DNS resolution for Alpine / Ubuntu
         final resolvConf = File('$rootfsPath/etc/resolv.conf');
         await resolvConf.writeAsString('nameserver 8.8.8.8\nnameserver 1.1.1.1\n');
-        
         final hostsFile = File('$rootfsPath/etc/hosts');
         await hostsFile.writeAsString('127.0.0.1 localhost\n::1 localhost\n');
         
-        // Cleanup archive
         await archiveFile.delete();
       }
 
@@ -180,124 +216,179 @@ class _TerminalScreenState extends State<TerminalScreen> {
     };
 
     terminal.onResize = (width, height, pixelWidth, pixelHeight) {
-      pty?.resize(height, width);
+      pty?.resize(height, width); // Correct rows, cols map
     };
 
     terminal.write('\x1B[1;32mBotopus Linux (Ubuntu PRoot) Initialized!\x1B[0m\r\n');
-    terminal.write('Try running: \x1B[1;36mapt update && apt install python3\x1B[0m\r\n\r\n');
   }
 
   @override
   void dispose() {
     pty?.kill();
+    _tabController.dispose();
     super.dispose();
+  }
+
+  void _showApiKeyDialog() {
+    TextEditingController _keyController = TextEditingController(text: apiKey);
+    showDialog(context: context, builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      title: const Text('Enter API Key (Gemini/Anthropic)'),
+      content: TextField(
+        controller: _keyController,
+        decoration: const InputDecoration(hintText: 'AIzaSy...'),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () {
+            setState(() {
+              apiKey = _keyController.text;
+            });
+            Navigator.pop(context);
+          }, 
+          child: const Text('Save')
+        )
+      ],
+    ));
+  }
+
+  void _openNewChat() {
+    if (apiKey.isEmpty) {
+      _showApiKeyDialog();
+      return;
+    }
+    // TODO: Create new chat session logic
+    setState(() {
+      chatSessions.add({"id": DateTime.now().toString(), "title": "New Session ${chatSessions.length + 1}"});
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isBootstrapping) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(statusText, style: const TextStyle(color: Colors.white)),
+            ],
+          ),
+        )
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Botopus Linux'),
-        backgroundColor: Colors.black87,
+        title: const Text('Botopus AI IDE'),
         actions: [
-          if (!isBootstrapping)
-            IconButton(
-              icon: const Icon(Icons.open_in_browser),
-              onPressed: () async {
-                final text = terminal.buffer.getText();
-                final regex = RegExp(r"https?://[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+(?:[\r\n]+[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+)*");
-                final matches = regex.allMatches(text);
-                if (matches.isNotEmpty) {
-                  String urlStr = matches.last.group(0)!.replaceAll(RegExp(r'\r?\n'), '');
-                  final uri = Uri.parse(urlStr);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open link')));
-                    }
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No link found on screen')));
-                  }
-                }
-              },
-            ),
-          if (!isBootstrapping)
-            IconButton(
-              icon: const Icon(Icons.copy),
-              onPressed: () async {
-                final selection = terminalController.selection;
-                final text = selection != null ? terminal.buffer.getText(selection) : terminal.buffer.getText();
-                await Clipboard.setData(ClipboardData(text: text));
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(selection != null ? 'Selected text copied!' : 'Terminal text copied!')),
-                  );
-                }
-              },
-            ),
-          if (!isBootstrapping)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () async {
-                pty?.kill();
-                terminal.eraseDisplay();
-                final docDir = await getApplicationDocumentsDirectory();
-                _startPty('${docDir.path}/proot', '${docDir.path}/ubuntu');
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.key),
+            tooltip: 'API Keys',
+            onPressed: _showApiKeyDialog,
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: const Color(0xFF4F46E5),
+          tabs: const [
+            Tab(text: 'Tasks (Chat)', icon: Icon(Icons.chat_bubble_outline)),
+            Tab(text: 'Terminal (PRoot)', icon: Icon(Icons.terminal)),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // TAB 1: Tasks / Chat Sessions
+          _buildTasksTab(),
+          
+          // TAB 2: Terminal
+          _buildTerminalTab(),
         ],
       ),
-      body: SafeArea(
-        child: isBootstrapping
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 20),
-                    Text(statusText, style: const TextStyle(color: Colors.white)),
-                  ],
-                ),
-              )
-            : Column(
-                children: [
-                  Expanded(child: TerminalView(terminal, controller: terminalController)),
-                  Container(
-                    color: const Color(0xFF2E3440),
-                    height: 40,
-                    width: double.infinity,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
-                          _extraKey('TAB', () => pty?.write(Uint8List.fromList([9]))),
-                          _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
-                          _extraKey('-', () => pty?.write(Uint8List.fromList([45]))),
-                          _extraKey('/', () => pty?.write(Uint8List.fromList([47]))),
-                          _extraKey('|', () => pty?.write(Uint8List.fromList([124]))),
-                          _extraKey('PG UP', () => pty?.write(Uint8List.fromList([27, 91, 53, 126]))),
-                          _extraKey('PG DN', () => pty?.write(Uint8List.fromList([27, 91, 54, 126]))),
-                          _extraKey('↑', () => pty?.write(Uint8List.fromList([27, 91, 65]))),
-                          _extraKey('↓', () => pty?.write(Uint8List.fromList([27, 91, 66]))),
-                          _extraKey('←', () => pty?.write(Uint8List.fromList([27, 91, 68]))),
-                          _extraKey('→', () => pty?.write(Uint8List.fromList([27, 91, 67]))),
-                          _extraKey('PASTE', () async {
-                            final data = await Clipboard.getData('text/plain');
-                            if (data?.text != null) {
-                              terminal.paste(data!.text!);
-                            }
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
+      floatingActionButton: _tabController.index == 0 ? FloatingActionButton(
+        onPressed: _openNewChat,
+        child: const Icon(Icons.add),
+      ) : null,
+    );
+  }
+
+  Widget _buildTasksTab() {
+    if (chatSessions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.forum, size: 64, color: Colors.white24),
+            const SizedBox(height: 16),
+            const Text('No active tasks.', style: TextStyle(color: Colors.white54, fontSize: 16)),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _openNewChat, 
+              child: const Text('Start New Task')
+            )
+          ],
+        )
+      );
+    }
+
+    return ListView.builder(
+      itemCount: chatSessions.length,
+      itemBuilder: (context, index) {
+        final session = chatSessions[index];
+        return ListTile(
+          leading: const Icon(Icons.chat, color: Color(0xFF4F46E5)),
+          title: Text(session['title']!, style: const TextStyle(color: Colors.white)),
+          subtitle: const Text('Active', style: TextStyle(color: Colors.white54)),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white24),
+          onTap: () {
+            // Open Chat View (To be implemented)
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening chat...')));
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTerminalTab() {
+    return Column(
+      children: [
+        Expanded(child: TerminalView(terminal, controller: terminalController)),
+        Container(
+          color: const Color(0xFF2E3440),
+          height: 40,
+          width: double.infinity,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _extraKey('ESC', () => pty?.write(Uint8List.fromList([27]))),
+                _extraKey('TAB', () => pty?.write(Uint8List.fromList([9]))),
+                _extraKey('CTRL+C', () => pty?.write(Uint8List.fromList([3]))),
+                _extraKey('-', () => pty?.write(Uint8List.fromList([45]))),
+                _extraKey('/', () => pty?.write(Uint8List.fromList([47]))),
+                _extraKey('|', () => pty?.write(Uint8List.fromList([124]))),
+                _extraKey('PG UP', () => pty?.write(Uint8List.fromList([27, 91, 53, 126]))),
+                _extraKey('PG DN', () => pty?.write(Uint8List.fromList([27, 91, 54, 126]))),
+                _extraKey('↑', () => pty?.write(Uint8List.fromList([27, 91, 65]))),
+                _extraKey('↓', () => pty?.write(Uint8List.fromList([27, 91, 66]))),
+                _extraKey('←', () => pty?.write(Uint8List.fromList([27, 91, 68]))),
+                _extraKey('→', () => pty?.write(Uint8List.fromList([27, 91, 67]))),
+                _extraKey('PASTE', () async {
+                  final data = await Clipboard.getData('text/plain');
+                  if (data?.text != null) {
+                    terminal.paste(data!.text!);
+                  }
+                }),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -322,4 +413,3 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
   }
 }
-

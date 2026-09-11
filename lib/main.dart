@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 void main() {
   runApp(const BotopusApp());
@@ -45,6 +46,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
     _bootstrapEnvironment();
   }
 
@@ -178,7 +180,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     };
 
     terminal.onResize = (width, height, pixelWidth, pixelHeight) {
-      pty?.resize(width, height);
+      pty?.resize(height, width);
     };
 
     terminal.write('\x1B[1;32mBotopus Linux (Ubuntu PRoot) Initialized!\x1B[0m\r\n');

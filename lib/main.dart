@@ -177,6 +177,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
       pty!.write(Uint8List.fromList(utf8.encode(text)));
     };
 
+    terminal.onResize = (width, height, pixelWidth, pixelHeight) {
+      pty?.resize(width, height);
+    };
+
     terminal.write('\x1B[1;32mBotopus Linux (Ubuntu PRoot) Initialized!\x1B[0m\r\n');
     terminal.write('Try running: \x1B[1;36mapt update && apt install python3\x1B[0m\r\n\r\n');
   }

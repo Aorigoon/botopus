@@ -172,12 +172,12 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                   constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
                   decoration: BoxDecoration(
-                    color: msg.isUser ? const Color(0xFF4F46E5) : const Color(0xFF2E3440),
+                    color: msg.isUser ? const Color(0xFF2E2E2E) : Colors.transparent,
                     borderRadius: BorderRadius.circular(16.0),
                   ),
                   child: Text(
                     msg.text,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: msg.isUser ? Colors.white : Colors.white70, fontSize: 15),
                   ),
                 ),
               );
@@ -192,7 +192,7 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
               children: [
                 const SizedBox(
                   width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF4F46E5)),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
                 ),
                 const SizedBox(width: 12),
                 Text(_agentStatus, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
@@ -201,15 +201,15 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
           ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          color: const Color(0xFF121212), // Black background
+          color: Colors.transparent, // Floating over background
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.add, color: Colors.white70),
+                icon: const Icon(Icons.add, color: Colors.white54),
                 onPressed: () {},
               ),
               IconButton(
-                icon: const Icon(Icons.attachment, color: Colors.white70), // Connector wire icon
+                icon: const Icon(Icons.cable, color: Colors.white54), // Connector wire icon
                 onPressed: () {},
               ),
               Expanded(
@@ -217,14 +217,22 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
                   controller: _controller,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: "Message Agent...",
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hintText: "How can I help you today?",
+                    hintStyle: const TextStyle(color: Colors.white54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24.0),
-                      borderSide: BorderSide.none,
+                      borderSide: const BorderSide(color: Color(0xFF333333)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.0),
+                      borderSide: const BorderSide(color: Color(0xFF333333)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.0),
+                      borderSide: const BorderSide(color: Colors.white30),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFF2E3440),
+                    fillColor: const Color(0xFF1E1E1E),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                   ),
                   onSubmitted: _isProcessing ? null : _sendMessage,
@@ -232,7 +240,7 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.send, color: Color(0xFF4F46E5)),
+                icon: const Icon(Icons.arrow_upward, color: Colors.white70),
                 onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
               ),
             ],

@@ -9,6 +9,7 @@ import 'package:xterm/xterm.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'chat_screen.dart';
 
 void main() {
   runApp(const BotopusApp());
@@ -48,33 +49,7 @@ class BotopusHomePage extends StatefulWidget {
 }
 
 class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProviderStateMixin {
-  final terminal = Terminal(
-    maxLines: 10000,
-    theme: const TerminalTheme(
-      cursor: Colors.white,
-      selection: Color(0x77FFFFFF),
-      foreground: Colors.white,
-      background: Color(0xFF121212),
-      black: Colors.black,
-      red: Colors.red,
-      green: Colors.green,
-      yellow: Colors.yellow,
-      blue: Colors.blue,
-      magenta: Colors.magenta,
-      cyan: Colors.cyan,
-      white: Colors.white,
-      brightBlack: Colors.black45,
-      brightRed: Colors.redAccent,
-      brightGreen: Colors.greenAccent,
-      brightYellow: Colors.yellowAccent,
-      brightBlue: Colors.blueAccent,
-      brightMagenta: Colors.magentaAccent,
-      brightCyan: Colors.cyanAccent,
-      brightWhite: Colors.white,
-      searchHitBackground: Colors.yellow,
-      searchHitBackgroundCurrent: Colors.orange,
-      searchHitForeground: Colors.black,
-    ),
+  final terminal = Terminal(maxLines: 10000
   );
   
   final terminalController = TerminalController();
@@ -86,6 +61,7 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
   // Chat state
   List<Map<String, String>> chatSessions = [];
   String apiKey = "";
+  Stream<String>? ptyOutputStream;
 
   @override
   void initState() {
@@ -207,13 +183,18 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
       workingDirectory: rootfsPath,
     );
 
-    pty!.output.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true)).listen((text) {
+    final broadcastStream = pty!.output.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true)).asBroadcastStream();
+    
+    broadcastStream.listen((text) {
       terminal.write(text);
     });
 
     terminal.onOutput = (text) {
       pty!.write(Uint8List.fromList(utf8.encode(text)));
     };
+    
+    // Store broadcast stream so we can pass it to chat screen
+    ptyOutputStream = broadcastStream;
 
     terminal.onResize = (width, height, pixelWidth, pixelHeight) {
       pty?.resize(height, width); // Correct rows, cols map
@@ -336,21 +317,10 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
       );
     }
 
-    return ListView.builder(
-      itemCount: chatSessions.length,
-      itemBuilder: (context, index) {
-        final session = chatSessions[index];
-        return ListTile(
-          leading: const Icon(Icons.chat, color: Color(0xFF4F46E5)),
-          title: Text(session['title']!, style: const TextStyle(color: Colors.white)),
-          subtitle: const Text('Active', style: TextStyle(color: Colors.white54)),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white24),
-          onTap: () {
-            // Open Chat View (To be implemented)
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening chat...')));
-          },
-        );
-      },
+    return ChatScreen(
+      pty: pty,
+      apiKey: apiKey,
+      ptyOutputStream: ptyOutputStream,
     );
   }
 

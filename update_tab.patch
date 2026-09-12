@@ -1,0 +1,27 @@
+--- lib/main.dart
++++ lib/main.dart
+@@ -339,18 +339,7 @@
+       );
+     }
+ 
+-    return ListView.builder(
+-      itemCount: chatSessions.length,
+-      itemBuilder: (context, index) {
+-        final session = chatSessions[index];
+-        return ListTile(
+-          leading: const Icon(Icons.chat, color: Color(0xFF4F46E5)),
+-          title: Text(session['title']!, style: const TextStyle(color: Colors.white)),
+-          subtitle: const Text('Active', style: TextStyle(color: Colors.white54)),
+-          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white24),
+-          onTap: () {
+-            // Open Chat View (To be implemented)
+-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening chat...')));
+-          },
+-        );
+-      },
+-    );
++    return ChatScreen(
++      pty: pty,
++      apiKey: apiKey,
++      ptyOutputStream: ptyOutputStream,
++    );

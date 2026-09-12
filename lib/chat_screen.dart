@@ -154,7 +154,7 @@ CRITICAL: If you run a server (e.g. python3 -m http.server, ngrok, localhost.run
         }
         
         if (_cancelRequested) {
-          widget.pty!.write([0x03]); // Send Ctrl+C
+          widget.pty!.write(Uint8List.fromList([0x03])); // Send Ctrl+C
           setState(() { _messages.add(ChatMessage(text: "Command execution cancelled.", isUser: false)); _isProcessing = false; _agentStatus = ""; });
           break;
         }

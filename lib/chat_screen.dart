@@ -23,10 +23,11 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool _isProcessing = false;
+  bool _cancelRequested = false;
   String _agentStatus = "";
   
   late GenerativeModel _model;
@@ -34,6 +35,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   StringBuffer _terminalBuffer = StringBuffer();
   StreamSubscription? _ptySubscription;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -86,6 +90,7 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
     setState(() {
       _messages.add(ChatMessage(text: text, isUser: true));
       _isProcessing = true;
+      _cancelRequested = false;
       _agentStatus = "Thinking...";
     });
     
@@ -102,12 +107,23 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
     }
   }
 
+  void _cancelTask() {
+    setState(() {
+      _cancelRequested = true;
+      _agentStatus = "Cancelling...";
+    });
+  }
+
   Future<void> _agentLoop(String prompt) async {
     int maxLoops = 5;
     int currentLoop = 0;
     String currentPrompt = prompt;
 
     while (currentLoop < maxLoops) {
+      if (_cancelRequested) {
+        setState(() { _messages.add(ChatMessage(text: "Task cancelled.", isUser: false)); _isProcessing = false; _agentStatus = ""; });
+        break;
+      }
       setState(() { _agentStatus = "Thinking..."; });
       
       final response = await _chatSession.sendMessage(Content.text(currentPrompt));
@@ -130,7 +146,17 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
         _terminalBuffer.clear();
         widget.pty!.write(utf8.encode(command + "\n"));
         
-        await Future.delayed(const Duration(seconds: 4));
+        // Check for cancel during wait
+        for (int i = 0; i < 8; i++) {
+          if (_cancelRequested) break;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+        
+        if (_cancelRequested) {
+          widget.pty!.write([0x03]); // Send Ctrl+C
+          setState(() { _messages.add(ChatMessage(text: "Command execution cancelled.", isUser: false)); _isProcessing = false; _agentStatus = ""; });
+          break;
+        }
         
         String output = _terminalBuffer.toString();
         if (output.length > 2000) {
@@ -153,6 +179,7 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Column(
       children: [
 
@@ -248,12 +275,13 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          color: _isProcessing ? Colors.transparent : const Color(0xFF333333),
-                          shape: BoxShape.circle,
+                          color: _isProcessing ? Colors.white : const Color(0xFF333333),
+                          shape: _isProcessing ? BoxShape.rectangle : BoxShape.circle,
+                          borderRadius: _isProcessing ? BorderRadius.circular(8.0) : null,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_upward, color: Colors.white),
-                          onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
+                          icon: Icon(_isProcessing ? Icons.stop : Icons.arrow_upward, color: _isProcessing ? Colors.black : Colors.white),
+                          onPressed: _isProcessing ? _cancelTask : () => _sendMessage(_controller.text),
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.all(8.0),
                         ),

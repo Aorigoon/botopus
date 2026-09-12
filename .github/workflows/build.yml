@@ -19,8 +19,8 @@ jobs:
         sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 28\n        lint {\n            abortOnError = false\n        }/' android/app/build.gradle.kts
         mkdir -p ~/.android
         cp debug.keystore ~/.android/debug.keystore
-        flutter build apk --release
+        flutter build apk --debug
     - uses: actions/upload-artifact@v4
       with:
-        name: app-release.apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        name: app-debug.apk
+        path: build/app/outputs/flutter-apk/app-debug.apk

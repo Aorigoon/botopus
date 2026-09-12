@@ -13,6 +13,48 @@ class ChatMessage {
   ChatMessage({required this.text, required this.isUser, this.status});
 }
 
+class TypewriterText extends StatefulWidget {
+  final String text;
+  const TypewriterText(this.text, {super.key});
+
+  @override
+  State<TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<TypewriterText> {
+  String displayedText = "";
+  Timer? _timer;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTyping();
+  }
+
+  void _startTyping() {
+    _timer = Timer.periodic(const Duration(milliseconds: 15), (timer) {
+      if (_currentIndex < widget.text.length) {
+        setState(() {
+          displayedText += widget.text[_currentIndex];
+          _currentIndex++;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Text(displayedText, style: const TextStyle(color: Colors.white));
+}
+
 class ChatScreen extends StatefulWidget {
   final Pty? pty;
   final String apiKey;
@@ -73,13 +115,14 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
 You are an advanced autonomous coding assistant named Botopus.
 You are a conversational agent. You must understand the user's requirements FIRST before taking action. Ask clarifying questions if the request is ambiguous.
 ALWAYS explain what you are going to do in a friendly, conversational manner BEFORE executing any commands.
+Keep your responses short and concise. Do NOT dump large code blocks (like HTML/CSS) into the chat. Instead, write the code directly to a file using standard commands, and just tell the user briefly that you wrote it.
 If you need to execute a bash command, wrap it strictly in <run>...</run> tags AFTER your explanation. For example: "I will now list the directory contents." <run>ls -la</run>
 Only output ONE <run> block at a time. Wait for the terminal output before proceeding.
 CRITICAL: If you run a server (e.g. python3 -m http.server, ngrok, localhost.run), you MUST run it in the background using `&` (e.g., <run>python3 -m http.server 8000 &</run>), otherwise it will block the terminal forever and you will be stuck!
 ''';
 
     _model = GenerativeModel(
-      model: 'gemini-3.5-flash',
+      model: 'gemini-1.5-flash',
       apiKey: widget.apiKey,
       systemInstruction: Content.system(systemPrompt),
     );
@@ -201,10 +244,12 @@ CRITICAL: If you run a server (e.g. python3 -m http.server, ngrok, localhost.run
                     color: msg.isUser ? const Color(0xFF2E2E2E) : Colors.transparent,
                     borderRadius: BorderRadius.circular(16.0),
                   ),
-                  child: Text(
-                    msg.text,
-                    style: TextStyle(color: msg.isUser ? Colors.white : Colors.white70, fontSize: 15),
-                  ),
+                  child: msg.isUser
+                      ? Text(
+                          msg.text,
+                          style: TextStyle(color: Colors.white, fontSize: 15),
+                        )
+                      : TypewriterText(msg.text),
                 ),
               );
             },

@@ -72,6 +72,15 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
   bool _isProcessing = false;
   bool _cancelRequested = false;
   String _agentStatus = "";
+
+  final List<String> _models = [
+    'gemini-3.2-flash',
+    'gemini-3.1-flash',
+    'gemini-3.0-flash',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash',
+  ];
+  int _currentModelIndex = 0;
   
   late GenerativeModel _model;
   late ChatSession _chatSession;
@@ -122,7 +131,7 @@ CRITICAL: If you run a server (e.g. python3 -m http.server, ngrok, localhost.run
 ''';
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: _models[_currentModelIndex],
       apiKey: widget.apiKey,
       systemInstruction: Content.system(systemPrompt),
     );
@@ -171,8 +180,23 @@ CRITICAL: If you run a server (e.g. python3 -m http.server, ngrok, localhost.run
       }
       setState(() { _agentStatus = "Thinking..."; });
       
-      final response = await _chatSession.sendMessage(Content.text(currentPrompt));
-      final responseText = response.text ?? "";
+      String responseText = "";
+      try {
+        final response = await _chatSession.sendMessage(Content.text(currentPrompt));
+        responseText = response.text ?? "";
+      } catch (e) {
+        if (_currentModelIndex < _models.length - 1) {
+          _currentModelIndex++;
+          setState(() { _agentStatus = "Fallback to ${_models[_currentModelIndex]}..."; });
+          final history = _chatSession.history.toList();
+          _initAgent();
+          _chatSession = _model.startChat(history: history);
+          continue; // Retry with new model
+        } else {
+          setState(() { _messages.add(ChatMessage(text: "Error: All models failed. ${e.toString()}", isUser: false)); _isProcessing = false; _agentStatus = ""; });
+          break;
+        }
+      }
       
       final runMatch = RegExp(r'<run>(.*?)</run>', dotAll: true).firstMatch(responseText);
       

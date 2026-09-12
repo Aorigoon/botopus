@@ -107,6 +107,12 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
         await soFile.writeAsBytes(byteData.buffer.asUint8List());
       }
 
+      final tallocFile = File('${docDir.path}/libtalloc.so.2');
+      if (!await tallocFile.exists()) {
+        final byteData = await rootBundle.load('assets/libtalloc.so.2');
+        await tallocFile.writeAsBytes(byteData.buffer.asUint8List());
+      }
+
       if (!await rootfsDir.exists()) {
         setState(() => statusText = "Extracting RootFS (This will take a while)...");
         final archiveData = await rootBundle.load('assets/ubuntu-rootfs.tar.gz');
@@ -128,6 +134,7 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
           environment: {
             'PROOT_LOADER': '${docDir.path}/loader',
             'PROOT_LOADER_32': '${docDir.path}/loader32',
+            'LD_LIBRARY_PATH': docDir.path,
           },
         );
         
@@ -179,6 +186,7 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
         'PROOT_NO_SECCOMP': '1',
         'PROOT_LOADER': '$docDirPath/loader',
         'PROOT_LOADER_32': '$docDirPath/loader32',
+        'LD_LIBRARY_PATH': docDirPath,
       },
       workingDirectory: rootfsPath,
     );

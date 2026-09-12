@@ -74,11 +74,8 @@ class _ChatScreenState extends State<ChatScreen> with AutomaticKeepAliveClientMi
   String _agentStatus = "";
 
   final List<String> _models = [
-    'gemini-3.2-flash',
-    'gemini-3.1-flash',
-    'gemini-3.0-flash',
-    'gemini-1.5-pro',
-    'gemini-1.5-flash',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
   ];
   int _currentModelIndex = 0;
   

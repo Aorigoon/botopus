@@ -59,7 +59,7 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
   late TabController _tabController;
   
   // Chat state
-  List<Map<String, String>> chatSessions = [];
+  List<Map<String, String>> chatSessions = [{"id": "1", "title": "Session"}];
   String apiKey = "";
   Stream<String>? ptyOutputStream;
 
@@ -257,57 +257,63 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
   Widget build(BuildContext context) {
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Botopus AI IDE'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.key),
-            tooltip: 'API Keys',
-            onPressed: _showApiKeyDialog,
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: const Color(0xFF4F46E5),
-          tabs: const [
-            Tab(text: 'Tasks (Chat)', icon: Icon(Icons.chat_bubble_outline)),
-            Tab(text: 'Terminal (PRoot)', icon: Icon(Icons.terminal)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (_tabController.index == 0) ...[
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                      tooltip: 'Clear Chat',
+                      onPressed: () {
+                        setState(() {
+                           chatSessions[0]["id"] = DateTime.now().toString();
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.terminal, color: Colors.white70),
+                      tooltip: 'Terminal',
+                      onPressed: () => _tabController.animateTo(1),
+                    ),
+                  ] else ...[
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
+                      tooltip: 'Back to Chat',
+                      onPressed: () => _tabController.animateTo(0),
+                    ),
+                  ],
+                  IconButton(
+                    icon: const Icon(Icons.vpn_key, color: Colors.white30, size: 20),
+                    onPressed: _showApiKeyDialog,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(), // Disable swipe to change tabs
+                controller: _tabController,
+                children: [
+                  _buildTasksTab(),
+                  _buildTerminalTab(),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // TAB 1: Tasks / Chat Sessions
-          _buildTasksTab(),
-          
-          // TAB 2: Terminal
-          _buildTerminalTab(),
-        ],
       ),
     );
   }
 
   Widget _buildTasksTab() {
-    if (chatSessions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.forum, size: 64, color: Colors.white24),
-            const SizedBox(height: 16),
-            const Text('No active tasks.', style: TextStyle(color: Colors.white54, fontSize: 16)),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _openNewChat, 
-              child: const Text('Start New Task')
-            )
-          ],
-        )
-      );
-    }
-
     return ChatScreen(
+      key: ValueKey(chatSessions[0]["id"]),
       pty: pty,
       apiKey: apiKey,
       ptyOutputStream: ptyOutputStream,

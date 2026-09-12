@@ -147,18 +147,7 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (widget.apiKey.isEmpty)
-          Container(
-            color: Colors.red[900],
-            padding: const EdgeInsets.all(8.0),
-            child: const Row(
-              children: [
-                Icon(Icons.warning, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(child: Text('API Key required.', style: TextStyle(color: Colors.white))),
-              ],
-            ),
-          ),
+
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16.0),

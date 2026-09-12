@@ -57,10 +57,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _initAgent() {
     final systemPrompt = '''
-You are an advanced autonomous coding agent. 
-If you need to execute a bash command, wrap it strictly in <run>...</run> tags. For example: <run>ls -la</run>
-Only output ONE <run> block at a time. Do not write text after the <run> block. Wait for the terminal output.
-If user asks for a web preview, install Node.js and run a simple HTTP server or use python3 -m http.server, and then use something like localhost.run (ssh -R 80:localhost:8000 localhost.run) to expose it, then give the link.
+You are an advanced autonomous coding assistant named Botopus.
+ALWAYS explain what you are going to do in a friendly, conversational manner BEFORE executing any commands. Never run commands silently on the first greeting without asking or explaining.
+If you need to execute a bash command, wrap it strictly in <run>...</run> tags AFTER your explanation. For example: "I will now list the directory contents." <run>ls -la</run>
+Only output ONE <run> block at a time. Do not write text after the <run> block. Wait for the terminal output before proceeding.
+If the user asks for a web preview, install Node.js and run a simple HTTP server or use python3 -m http.server, and then use localhost.run (ssh -R 80:localhost:8000 localhost.run) or similar to expose it, then provide the link in a beautiful way.
 ''';
 
     _model = GenerativeModel(
@@ -200,11 +201,15 @@ If user asks for a web preview, install Node.js and run a simple HTTP server or 
           ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          color: const Color(0xFF1E1E1E),
+          color: const Color(0xFF121212), // Black background
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.add_photo_alternate, color: Colors.grey),
+                icon: const Icon(Icons.add, color: Colors.white70),
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const Icon(Icons.attachment, color: Colors.white70), // Connector wire icon
                 onPressed: () {},
               ),
               Expanded(
@@ -226,12 +231,9 @@ If user asks for a web preview, install Node.js and run a simple HTTP server or 
                 ),
               ),
               const SizedBox(width: 8),
-              CircleAvatar(
-                backgroundColor: _isProcessing ? Colors.grey : const Color(0xFF4F46E5),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_upward, color: Colors.white),
-                  onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
-                ),
+              IconButton(
+                icon: const Icon(Icons.send, color: Color(0xFF4F46E5)),
+                onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
               ),
             ],
           ),

@@ -55,6 +55,14 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant ChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.apiKey != widget.apiKey) {
+      _initAgent();
+    }
+  }
+
   void _initAgent() {
     final systemPrompt = '''
 You are an advanced autonomous coding assistant named Botopus.
@@ -191,48 +199,44 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
           color: Colors.transparent, // Floating over background
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.add, color: Colors.white54),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.cable, color: Colors.white54), // Connector wire icon
-                onPressed: () {},
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: "How can I help you today?",
-                    hintStyle: const TextStyle(color: Colors.white54),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.0),
-                      borderSide: const BorderSide(color: Color(0xFF333333)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.0),
-                      borderSide: const BorderSide(color: Color(0xFF333333)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.0),
-                      borderSide: const BorderSide(color: Colors.white30),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFF1E1E1E),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                  ),
-                  onSubmitted: _isProcessing ? null : _sendMessage,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(24.0),
+              border: Border.all(color: const Color(0xFF333333)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white54),
+                  onPressed: () {},
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.arrow_upward, color: Colors.white70),
-                onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
-              ),
-            ],
+                IconButton(
+                  icon: const Icon(Icons.cable, color: Colors.white54),
+                  onPressed: () {},
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "How can I help you today?",
+                      hintStyle: TextStyle(color: Colors.white54),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 14.0),
+                    ),
+                    onSubmitted: _isProcessing ? null : _sendMessage,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_upward, color: Colors.white70),
+                  onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
           ),
         ),
       ],

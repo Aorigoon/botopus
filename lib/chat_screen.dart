@@ -198,43 +198,69 @@ If the user asks for a web preview, install Node.js and run a simple HTTP server
           ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          color: Colors.transparent, // Floating over background
+          color: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(24.0),
+              borderRadius: BorderRadius.circular(20.0),
               border: Border.all(color: const Color(0xFF333333)),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.add, color: Colors.white54),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.cable, color: Colors.white54),
-                  onPressed: () {},
-                ),
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 4.0),
                   child: TextField(
                     controller: _controller,
                     style: const TextStyle(color: Colors.white),
+                    minLines: 2,
+                    maxLines: 5,
                     decoration: const InputDecoration(
-                      hintText: "How can I help you today?",
-                      hintStyle: TextStyle(color: Colors.white54),
+                      hintText: "Ask, assign a task, type / for more",
+                      hintStyle: TextStyle(color: Colors.white30),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 14.0),
+                      contentPadding: EdgeInsets.symmetric(vertical: 12.0),
                     ),
-                    onSubmitted: _isProcessing ? null : _sendMessage,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_upward, color: Colors.white70),
-                  onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.add, color: Colors.white54),
+                            onPressed: () {},
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(8.0),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.cable, color: Colors.white54),
+                            onPressed: () {},
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(8.0),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _isProcessing ? Colors.transparent : const Color(0xFF333333),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_upward, color: Colors.white),
+                          onPressed: _isProcessing ? null : () => _sendMessage(_controller.text),
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(8.0),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 4),
               ],
             ),
           ),

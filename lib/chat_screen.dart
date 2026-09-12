@@ -64,7 +64,7 @@ If user asks for a web preview, install Node.js and run a simple HTTP server or 
 ''';
 
     _model = GenerativeModel(
-      model: 'gemini-1.5-pro',
+      model: 'gemini-1.5-flash',
       apiKey: widget.apiKey,
       systemInstruction: Content.system(systemPrompt),
     );

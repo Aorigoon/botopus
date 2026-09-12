@@ -135,6 +135,8 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
             'PROOT_LOADER': '${docDir.path}/loader',
             'PROOT_LOADER_32': '${docDir.path}/loader32',
             'LD_LIBRARY_PATH': docDir.path,
+            'PROOT_TMP_DIR': docDir.path,
+            'PATH': '/bin:/usr/bin:/sbin:/usr/sbin',
           },
         );
         
@@ -255,20 +257,6 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    if (isBootstrapping) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 20),
-              Text(statusText, style: const TextStyle(color: Colors.white)),
-            ],
-          ),
-        )
-      );
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -333,6 +321,18 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
   }
 
   Widget _buildTerminalTab() {
+    if (isBootstrapping) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(statusText, style: const TextStyle(color: Colors.white)),
+          ],
+        )
+      );
+    }
     return Column(
       children: [
         Expanded(child: TerminalView(terminal, controller: terminalController)),

@@ -127,9 +127,7 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
           [
             '--link2symlink',
             '-0',
-            '-r', rootfsPath,
-            '-b', '/dev', '-b', '/proc', '-b', '/sys',
-            '/bin/tar', '-xf', archiveFile.path, '-C', rootfsPath
+            '/system/bin/tar', '-xf', archiveFile.path, '-C', rootfsPath
           ],
           environment: {
             'PROOT_LOADER': '${docDir.path}/loader',
@@ -287,10 +285,6 @@ class _BotopusHomePageState extends State<BotopusHomePage> with SingleTickerProv
           _buildTerminalTab(),
         ],
       ),
-      floatingActionButton: _tabController.index == 0 ? FloatingActionButton(
-        onPressed: _openNewChat,
-        child: const Icon(Icons.add),
-      ) : null,
     );
   }
 
